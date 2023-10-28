@@ -17,7 +17,13 @@ function generateUserToken() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-app.use((req, res, next) => {
+// Function to create and initialize a CharacterAI instance
+function createCharacterAIInstance() {
+    const characterAI = new CharacterAI();
+    return characterAI.authenticateAsGuest().then(() => characterAI);
+}
+
+app.use(async(req, res, next) => {
     const userToken = req.cookies.userToken;
 
     if (!userToken) {
@@ -28,21 +34,19 @@ app.use((req, res, next) => {
         req.userToken = userToken;
     }
 
-    // Check if a CharacterAI instance exists for the userToken
     if (!characterAIInstances.has(req.userToken)) {
-        // If not, create a new instance and authenticate it
-        const characterAI = new CharacterAI();
-        characterAI.authenticateAsGuest().then(() => {
-            // Store the instance in the map
-            characterAIInstances.set(req.userToken, characterAI);
-            req.characterAI = characterAI;
-            next();
-        }).catch(error => {
-            console.error("Error authenticating as a guest:", error);
-            res.status(500).json({ error: "Error authenticating" });
-        });
+        // Create a new CharacterAI instance for this user
+        createCharacterAIInstance()
+            .then(characterAI => {
+                characterAIInstances.set(req.userToken, characterAI);
+                req.characterAI = characterAI;
+                next();
+            })
+            .catch(error => {
+                console.error("Error authenticating as a guest:", error);
+                res.status(500).json({ error: "Error authenticating" });
+            });
     } else {
-        // If an instance already exists, use it
         req.characterAI = characterAIInstances.get(req.userToken);
         next();
     }
@@ -67,6 +71,16 @@ app.post('/api/chat', async(req, res) => {
         res.json({ response: response.text });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Error generating response" });
+        // If an error occurs, create and initialize a new CharacterAI instance
+        createCharacterAIInstance()
+            .then(characterAI => {
+                characterAIInstances.set(req.userToken, characterAI);
+                req.characterAI = characterAI;
+                res.status(500).json({ error: "Error generating response" });
+            })
+            .catch(retryError => {
+                console.error("Error retrying authentication:", retryError);
+                res.status(500).json({ error: "Error authenticating" });
+            });
     }
 });

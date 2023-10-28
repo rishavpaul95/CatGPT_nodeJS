@@ -8,6 +8,8 @@ body {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;
+    padding-bottom: 10px;
+    padding-right: 10px;
     border: 1px solid #000;
     background-color: #000;
     color: #fff;
@@ -122,8 +124,8 @@ body {
 
 .input-section {
     display: flex;
+    padding-top: 9px;
     width: 100%;
-    padding: 10px;
     justify-content: space-between;
     align-items: center;
 }
@@ -139,9 +141,9 @@ body {
 }
 
 .input-section img#submit-icon {
-    padding: 7px;
+    padding: 5px;
     margin-left: 7px;
-    margin-top: 11px;
+    margin-bottom: 2px;
     width: 37px;
     height: 36px;
     cursor: pointer;
