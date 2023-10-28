@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+    <title>CatGPT</title>
+    <link href="static/css/bootstrap.css" rel="stylesheet" />
+    <link href="static/css/style.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="chat-container dark-mode">
+        <div class="chat-header">
+            <img src="static/images/bot-avatar.png" alt="CatGPT Avatar">
+            <h1>CatGPT</h1>
+            <span class="author">&copy; Rishav Paul</span>
+        </div>
+        <div class="chat-content">
+            <ul class="chat" id="chat">
+                <li class="bot-msg">Meow! How can I purr-sist you today?</li>
+            </ul>
+            <button id="scroll-to-bottom" class="scroll-button">&darr;</button>
+        </div>
+        <div class="input-section">
+            <input type="text" id="user-input" class="user-input" placeholder="Send a message...">
+            <img id="submit-icon" src="static/images/paper-plane2.png" alt="Submit">
+        </div>
+    </div>
+    <script src="static/js/gpt_script.js"></script>
+    <script src="static/js/bootstrap.js"></script>
+</body>
+</html>
