@@ -1,7 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 app.use(express.static('public'));
 app.use(cookieParser());
@@ -18,12 +18,17 @@ function generateUserToken() {
 }
 
 // Function to create and initialize a CharacterAI instance
-function createCharacterAIInstance() {
-    const characterAI = new CharacterAI();
-    return characterAI.authenticateAsGuest().then(() => characterAI);
+async function createCharacterAIInstance() {
+    try {
+        const characterAI = new CharacterAI();
+        await characterAI.authenticateAsGuest();
+        return characterAI;
+    } catch (error) {
+        throw error;
+    }
 }
 
-app.use(async(req, res, next) => {
+app.use(async (req, res, next) => {
     const userToken = req.cookies.userToken;
 
     if (!userToken) {
@@ -35,17 +40,15 @@ app.use(async(req, res, next) => {
     }
 
     if (!characterAIInstances.has(req.userToken)) {
-        // Create a new CharacterAI instance for this user
-        createCharacterAIInstance()
-            .then(characterAI => {
-                characterAIInstances.set(req.userToken, characterAI);
-                req.characterAI = characterAI;
-                next();
-            })
-            .catch(error => {
-                console.error("Error authenticating as a guest:", error);
-                res.status(500).json({ error: "Error authenticating" });
-            });
+        try {
+            const characterAI = await createCharacterAIInstance();
+            characterAIInstances.set(req.userToken, characterAI);
+            req.characterAI = characterAI;
+            next();
+        } catch (error) {
+            console.error("Error authenticating as a guest:", error);
+            res.status(500).json({ error: "Error authenticating" });
+        }
     } else {
         req.characterAI = characterAIInstances.get(req.userToken);
         next();
@@ -60,7 +63,7 @@ app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
 
-app.post('/api/chat', async(req, res) => {
+app.post('/api/chat', async (req, res) => {
     const userMessage = req.body.message;
     const characterAI = req.characterAI;
 
@@ -72,15 +75,15 @@ app.post('/api/chat', async(req, res) => {
     } catch (error) {
         console.error(error);
         // If an error occurs, create and initialize a new CharacterAI instance
-        createCharacterAIInstance()
-            .then(characterAI => {
-                characterAIInstances.set(req.userToken, characterAI);
-                req.characterAI = characterAI;
-                res.status(500).json({ error: "Error generating response" });
-            })
-            .catch(retryError => {
-                console.error("Error retrying authentication:", retryError);
-                res.status(500).json({ error: "Error authenticating" });
-            });
+        try {
+            const characterAI = await createCharacterAIInstance();
+            characterAIInstances.set(req.userToken, characterAI);
+            req.characterAI = characterAI;
+            res.status(500).json({ error: "Error generating response" });
+        } catch (retryError) {
+            console.error("Error retrying authentication:", retryError);
+            res.status(500).json({ error: "Error authenticating" });
+        }
     }
 });
+
