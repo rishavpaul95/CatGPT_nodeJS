@@ -40,27 +40,12 @@ app.use(async (req, res, next) => {
     }
 
     if (!characterAIInstances.has(req.userToken)) {
-        try {
-            const characterAI = await createCharacterAIInstance();
-            characterAIInstances.set(req.userToken, characterAI);
-            req.characterAI = characterAI;
-            next();
-        } catch (error) {
-            console.error("Error authenticating as a guest:", error);
-            res.status(500).json({ error: "Error authenticating" });
-        }
+        req.characterAI = null;
     } else {
         req.characterAI = characterAIInstances.get(req.userToken);
-        next();
     }
-});
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/views/index.html');
-});
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    next();
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -87,3 +72,10 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/views/index.html');
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
