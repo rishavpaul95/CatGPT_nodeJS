@@ -40,7 +40,15 @@ app.use(async (req, res, next) => {
     }
 
     if (!characterAIInstances.has(req.userToken)) {
-        req.characterAI = null;
+        try {
+            const characterAI = await createCharacterAIInstance();
+            characterAIInstances.set(req.userToken, characterAI);
+            req.characterAI = characterAI;
+        } catch (error) {
+            console.error("Error creating CharacterAI instance:", error);
+            res.status(500).json({ error: "Error creating CharacterAI instance" });
+            return;
+        }
     } else {
         req.characterAI = characterAIInstances.get(req.userToken);
     }
@@ -58,17 +66,8 @@ app.post('/api/chat', async (req, res) => {
         const response = await chat.sendAndAwaitResponse(userMessage, true);
         res.json({ response: response.text });
     } catch (error) {
-        console.error(error);
-        // If an error occurs, create and initialize a new CharacterAI instance
-        try {
-            const characterAI = await createCharacterAIInstance();
-            characterAIInstances.set(req.userToken, characterAI);
-            req.characterAI = characterAI;
-            res.status(500).json({ error: "Error generating response" });
-        } catch (retryError) {
-            console.error("Error retrying authentication:", retryError);
-            res.status(500).json({ error: "Error authenticating" });
-        }
+        console.error("Error sending message to CharacterAI:", error);
+        res.status(500).json({ error: "Error generating response" });
     }
 });
 
