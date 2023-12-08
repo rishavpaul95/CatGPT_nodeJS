@@ -8,6 +8,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 const CharacterAI = require("node_characterai");
+const characterId = "hTP85l95BwEyURXYCKMJ9WQ54eRrzsjHUr4gJG-SYng";
 
 // Map to associate userToken with CharacterAI instances
 const characterAIInstances = new Map();
@@ -41,6 +42,7 @@ app.use(async (req, res, next) => {
 
     if (!characterAIInstances.has(req.userToken)) {
         try {
+            
             const characterAI = await createCharacterAIInstance();
             characterAIInstances.set(req.userToken, characterAI);
             req.characterAI = characterAI;
@@ -68,7 +70,7 @@ app.post('/api/chat', async (req, res) => {
     const characterAI = req.characterAI;
 
     try {
-        const characterId = "hTP85l95BwEyURXYCKMJ9WQ54eRrzsjHUr4gJG-SYng";
+        
         const chat = await characterAI.createOrContinueChat(characterId);
         const response = await chat.sendAndAwaitResponse(userMessage, true);
         res.json({ response: response.text });
@@ -79,7 +81,9 @@ app.post('/api/chat', async (req, res) => {
             const characterAI = await createCharacterAIInstance();
             characterAIInstances.set(req.userToken, characterAI);
             req.characterAI = characterAI;
-            res.status(500).json({ error: "Error generating response" });
+            const chat = await characterAI.createOrContinueChat(characterId);
+            const response = await chat.sendAndAwaitResponse(userMessage, true);
+            res.json({ response: response.text });
         } catch (retryError) {
             console.error("Error retrying authentication:", retryError);
             res.status(500).json({ error: "Error authenticating" });
