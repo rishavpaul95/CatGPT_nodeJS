@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 3001;
@@ -6,6 +7,7 @@ const port = process.env.PORT || 3001;
 app.use(express.static('public'));
 app.use(cookieParser());
 app.use(express.json());
+app.use(cors());
 
 const CharacterAI = require("node_characterai");
 const characterId = "hTP85l95BwEyURXYCKMJ9WQ54eRrzsjHUr4gJG-SYng";

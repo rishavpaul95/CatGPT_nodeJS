@@ -14,9 +14,7 @@
         "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
         "express": "^4.18.2",
-        "node_characterai": "^1.2.1",
-        "nodemon": "^3.0.1",
-        "pm2": "^5.3.0",
-        "puppeteer": "^21.4.1"
+        "express-session": "^1.17.3",
+        "node_characterai": "^1.2.1"
     }
 }
