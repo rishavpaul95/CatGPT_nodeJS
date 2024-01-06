@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const app = express();
+const CharacterAI = require("node_characterai");
 const port = process.env.PORT || 3001;
 
 app.use(express.static('public'));
@@ -9,7 +10,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(cors());
 
-const CharacterAI = require("node_characterai");
+
 const characterId = "hTP85l95BwEyURXYCKMJ9WQ54eRrzsjHUr4gJG-SYng";
 
 // Map to associate userToken with CharacterAI instances
@@ -23,7 +24,7 @@ function generateUserToken() {
 // Function to create and initialize a CharacterAI instance
 async function createCharacterAIInstance() {
     try {
-        const characterAI = new CharacterAI();
+        const characterAI = new CharacterAI(characterId);
         await characterAI.authenticateAsGuest();
         return characterAI;
     } catch (error) {
