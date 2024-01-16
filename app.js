@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors');
+
 const cookieParser = require('cookie-parser');
 const app = express();
 const CharacterAI = require("node_characterai");
@@ -8,20 +8,18 @@ const port = process.env.PORT || 3001;
 app.use(express.static('public'));
 app.use(cookieParser());
 app.use(express.json());
-app.use(cors());
 
 
 const characterId = "hTP85l95BwEyURXYCKMJ9WQ54eRrzsjHUr4gJG-SYng";
 
-// Map to associate userToken with CharacterAI instances
 const characterAIInstances = new Map();
 
-// Function to generate a unique user token
+
 function generateUserToken() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-// Function to create and initialize a CharacterAI instance
+
 async function createCharacterAIInstance() {
     try {
         const characterAI = new CharacterAI(characterId);
@@ -32,22 +30,23 @@ async function createCharacterAIInstance() {
     }
 }
 
-app.use(async (req, res, next) => {
-    const userToken = req.cookies.userToken;
-
-    if (!userToken) {
-        const newUserToken = generateUserToken();
-        res.cookie('userToken', newUserToken, { maxAge: 3600000, httpOnly: true });
-        req.userToken = newUserToken;
-    } else {
-        req.userToken = userToken;
+function removeCharacterAIInstance(userToken) {
+    if (characterAIInstances.has(userToken)) {
+        const { characterAI, timeoutId } = characterAIInstances.get(userToken);
+        clearTimeout(timeoutId);
+        characterAIInstances.delete(userToken);
+    //  characterAI.close();
     }
+}
 
-    if (!characterAIInstances.has(req.userToken)) {
+app.use(async (req, res, next) => {
+    const userToken = req.cookies.userToken || generateUserToken();
+
+    if (!characterAIInstances.has(userToken)) {
         try {
-            
             const characterAI = await createCharacterAIInstance();
-            characterAIInstances.set(req.userToken, characterAI);
+            const timeoutId = setTimeout(() => removeCharacterAIInstance(userToken), 3600000);
+            characterAIInstances.set(userToken, { characterAI, timeoutId });
             req.characterAI = characterAI;
             next();
         } catch (error) {
@@ -55,7 +54,11 @@ app.use(async (req, res, next) => {
             res.status(500).json({ error: "Error authenticating" });
         }
     } else {
-        req.characterAI = characterAIInstances.get(req.userToken);
+        const { characterAI, timeoutId } = characterAIInstances.get(userToken);
+        clearTimeout(timeoutId);
+        const newTimeoutId = setTimeout(() => removeCharacterAIInstance(userToken), 3600000);
+        characterAIInstances.set(userToken, { characterAI, timeoutId: newTimeoutId });
+        req.characterAI = characterAI;
         next();
     }
 });
@@ -64,25 +67,21 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/views/index.html');
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
-
 app.post('/api/chat', async (req, res) => {
     const userMessage = req.body.message;
     const characterAI = req.characterAI;
 
     try {
-        
         const chat = await characterAI.createOrContinueChat(characterId);
         const response = await chat.sendAndAwaitResponse(userMessage, true);
         res.json({ response: response.text });
     } catch (error) {
         console.error(error);
-        // If an error occurs, create and initialize a new CharacterAI instance
+        
         try {
             const characterAI = await createCharacterAIInstance();
-            characterAIInstances.set(req.userToken, characterAI);
+            const timeoutId = setTimeout(() => removeCharacterAIInstance(req.cookies.userToken), 3600000);
+            characterAIInstances.set(req.cookies.userToken, { characterAI, timeoutId });
             req.characterAI = characterAI;
             const chat = await characterAI.createOrContinueChat(characterId);
             const response = await chat.sendAndAwaitResponse(userMessage, true);
@@ -92,4 +91,8 @@ app.post('/api/chat', async (req, res) => {
             res.status(500).json({ error: "Error authenticating" });
         }
     }
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
