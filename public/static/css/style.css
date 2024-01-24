@@ -1,11 +1,13 @@
 /* General styles */
-
+*{
+    font-family: 'Open Sans', sans-serif;
+}
 body {
     background-color: #000;
 }
 
 .chat-container {
-    max-width: 600px;
+    max-width: 100vh;
     margin: 0 auto;
     padding: 20px;
     padding-bottom: 10px;
