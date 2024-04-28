@@ -9,11 +9,19 @@ app.use(express.static('public'));
 app.use(cookieParser());
 app.use(express.json());
 
+const crypto = require('crypto');
+
+// Generate a 64-byte long secret
+const secret = crypto.randomBytes(64).toString('hex');
+
 app.use(session({
-    secret: 'your-secret-key',
+    secret: secret,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false }
+    cookie: { 
+        secure: false,
+        maxAge: 60 * 60 * 1000 // 1 hour
+    }
 }));
 
 app.use((req, res, next) => {
@@ -36,6 +44,11 @@ app.post('/api/chat', async (req, res) => {
 
     req.session.conversation.push({ role: 'user', content: userMessage });
 
+    // Limit the size of the conversation history
+    if (req.session.conversation.length > 100) {
+        req.session.conversation.shift();
+    }
+
     try {
         const response = await ollama.chat({
             model: model,
@@ -45,6 +58,11 @@ app.post('/api/chat', async (req, res) => {
         const responseBody = response.message.content;
 
         req.session.conversation.push({ role: 'assistant', content: responseBody });
+
+        // Limit the size of the conversation history
+        if (req.session.conversation.length > 100) {
+            req.session.conversation.shift();
+        }
 
         res.json({ response: responseBody });
 
