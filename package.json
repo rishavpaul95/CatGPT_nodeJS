@@ -15,6 +15,6 @@
         "cors": "^2.8.5",
         "express": "^4.18.2",
         "express-session": "^1.18.0",
-        "node_characterai": "^1.2.5"
+        "ollama": "^0.5.0"
     }
 }
