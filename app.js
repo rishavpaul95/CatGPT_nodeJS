@@ -31,7 +31,7 @@ app.use((req, res, next) => {
     next();
 });
 
-const ollama = new Ollama(({ host: 'http://192.168.0.193:11434' }));
+const ollama = new Ollama(({ host: 'http://127.0.0.1:11434' }));
 
 const model = 'catGPT';
 
