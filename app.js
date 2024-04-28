@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 
 const ollama = new Ollama(({ host: 'http://192.168.0.193:11434' }));
 
-const model = 'chandan';
+const model = 'catGPT';
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/views/index.html');
